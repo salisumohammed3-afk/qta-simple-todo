@@ -1,11 +1,8 @@
-// Supabase configuration
 const SUPABASE_URL = 'https://jutekdfijehfvfdonxpc.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1dGVrZGZpamVoZnZmZG9ueHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MjY0NTksImV4cCI6MjA4OTUwMjQ1OX0.t32JiKLm2UJczRTjNnUwHfJ0vJRpVlUxoUBiwi3M6LE';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1dGVrZGZpamVoZnZmZG9ueHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MjY0NTksImV4cCI6MjA4OTUwMjQ1OX0.8eD5ciRSlG-0dSlt5wvXfwLcZDAmV9grUeAuHsXmFF8';
 
-// Initialize Supabase client
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// DOM elements
 const todoInput = document.getElementById('todoInput');
 const addBtn = document.getElementById('addBtn');
 const todoList = document.getElementById('todoList');
@@ -13,11 +10,9 @@ const filterBtns = document.querySelectorAll('.filter-btn');
 const totalTasks = document.getElementById('totalTasks');
 const completedTasks = document.getElementById('completedTasks');
 
-// State
 let todos = [];
 let currentFilter = 'all';
 
-// Event listeners
 addBtn.addEventListener('click', addTodo);
 todoInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') addTodo();
@@ -31,7 +26,6 @@ filterBtns.forEach(btn => {
     });
 });
 
-// Initialize app
 init();
 
 async function init() {
@@ -47,35 +41,23 @@ async function init() {
 }
 
 async function loadTodos() {
-    try {
-        const { data, error } = await supabase
-            .from('qta_todo_items')
-            .select('*')
-            .order('created_at', { ascending: false });
+    const { data, error } = await supabase
+        .from('qta_todo_items')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        
-        todos = data || [];
-    } catch (error) {
-        console.error('Error loading todos:', error);
-        throw error;
-    }
+    if (error) throw error;
+    todos = data || [];
 }
 
 async function addTodo() {
-    const text = todoInput.value.trim();
-    if (!text) return;
+    const title = todoInput.value.trim();
+    if (!title) return;
 
     try {
-        const newTodo = {
-            text: text,
-            completed: false,
-            created_at: new Date().toISOString()
-        };
-
         const { data, error } = await supabase
             .from('qta_todo_items')
-            .insert([newTodo])
+            .insert([{ title, completed: false }])
             .select()
             .single();
 
@@ -92,10 +74,10 @@ async function addTodo() {
 }
 
 async function toggleTodo(id) {
-    try {
-        const todo = todos.find(t => t.id === id);
-        if (!todo) return;
+    const todo = todos.find(t => t.id === id);
+    if (!todo) return;
 
+    try {
         const { error } = await supabase
             .from('qta_todo_items')
             .update({ completed: !todo.completed })
@@ -108,12 +90,12 @@ async function toggleTodo(id) {
         updateStats();
     } catch (error) {
         console.error('Error toggling todo:', error);
-        showError('Failed to update todo. Please try again.');
+        showError('Failed to update todo.');
     }
 }
 
 async function deleteTodo(id) {
-    if (!confirm('Are you sure you want to delete this todo?')) return;
+    if (!confirm('Delete this todo?')) return;
 
     try {
         const { error } = await supabase
@@ -128,7 +110,7 @@ async function deleteTodo(id) {
         updateStats();
     } catch (error) {
         console.error('Error deleting todo:', error);
-        showError('Failed to delete todo. Please try again.');
+        showError('Failed to delete todo.');
     }
 }
 
@@ -136,28 +118,28 @@ async function editTodo(id) {
     const todo = todos.find(t => t.id === id);
     if (!todo) return;
 
-    const newText = prompt('Edit todo:', todo.text);
-    if (!newText || newText.trim() === todo.text) return;
+    const newTitle = prompt('Edit todo:', todo.title);
+    if (!newTitle || newTitle.trim() === todo.title) return;
 
     try {
         const { error } = await supabase
             .from('qta_todo_items')
-            .update({ text: newText.trim() })
+            .update({ title: newTitle.trim() })
             .eq('id', id);
 
         if (error) throw error;
 
-        todo.text = newText.trim();
+        todo.title = newTitle.trim();
         renderTodos();
     } catch (error) {
         console.error('Error editing todo:', error);
-        showError('Failed to edit todo. Please try again.');
+        showError('Failed to edit todo.');
     }
 }
 
 function renderTodos() {
     const filteredTodos = getFilteredTodos();
-    
+
     if (filteredTodos.length === 0) {
         showEmptyState();
         return;
@@ -165,16 +147,16 @@ function renderTodos() {
 
     todoList.innerHTML = filteredTodos.map(todo => `
         <div class="todo-item ${todo.completed ? 'completed' : ''}">
-            <input 
-                type="checkbox" 
-                class="todo-checkbox" 
-                ${todo.completed ? 'checked' : ''} 
-                onchange="toggleTodo(${todo.id})"
+            <input
+                type="checkbox"
+                class="todo-checkbox"
+                ${todo.completed ? 'checked' : ''}
+                onchange="toggleTodo('${todo.id}')"
             >
-            <span class="todo-text">${escapeHtml(todo.text)}</span>
+            <span class="todo-text">${escapeHtml(todo.title || '')}</span>
             <div class="todo-actions">
-                <button class="edit-btn" onclick="editTodo(${todo.id})">Edit</button>
-                <button class="delete-btn" onclick="deleteTodo(${todo.id})">Delete</button>
+                <button class="edit-btn" onclick="editTodo('${todo.id}')">Edit</button>
+                <button class="delete-btn" onclick="deleteTodo('${todo.id}')">Delete</button>
             </div>
         </div>
     `).join('');
@@ -182,12 +164,9 @@ function renderTodos() {
 
 function getFilteredTodos() {
     switch (currentFilter) {
-        case 'completed':
-            return todos.filter(todo => todo.completed);
-        case 'pending':
-            return todos.filter(todo => !todo.completed);
-        default:
-            return todos;
+        case 'completed': return todos.filter(todo => todo.completed);
+        case 'pending': return todos.filter(todo => !todo.completed);
+        default: return todos;
     }
 }
 
@@ -198,11 +177,8 @@ function updateFilterButtons() {
 }
 
 function updateStats() {
-    const total = todos.length;
-    const completed = todos.filter(todo => todo.completed).length;
-    
-    totalTasks.textContent = total;
-    completedTasks.textContent = completed;
+    totalTasks.textContent = todos.length;
+    completedTasks.textContent = todos.filter(todo => todo.completed).length;
 }
 
 function showLoading() {
@@ -214,13 +190,13 @@ function showError(message) {
 }
 
 function showEmptyState() {
-    const message = currentFilter === 'all' 
-        ? 'No todos yet. Add your first task above!' 
+    const message = currentFilter === 'all'
+        ? 'No todos yet. Add your first task above!'
         : `No ${currentFilter} todos found.`;
-    
+
     todoList.innerHTML = `
         <div class="empty-state">
-            <h3>📝 ${message}</h3>
+            <h3>${message}</h3>
             <p>Stay organized and get things done!</p>
         </div>
     `;
@@ -232,7 +208,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Make functions globally available for onclick handlers
 window.toggleTodo = toggleTodo;
 window.deleteTodo = deleteTodo;
 window.editTodo = editTodo;
