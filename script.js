@@ -1,7 +1,7 @@
 const SUPABASE_URL = 'https://jutekdfijehfvfdonxpc.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1dGVrZGZpamVoZnZmZG9ueHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MjY0NTksImV4cCI6MjA4OTUwMjQ1OX0.8eD5ciRSlG-0dSlt5wvXfwLcZDAmV9grUeAuHsXmFF8';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const todoInput = document.getElementById('todoInput');
 const addBtn = document.getElementById('addBtn');
@@ -41,7 +41,7 @@ async function init() {
 }
 
 async function loadTodos() {
-    const { data, error } = await supabase
+    const { data, error } = await db
         .from('qta_todo_items')
         .select('*')
         .order('created_at', { ascending: false });
@@ -55,7 +55,7 @@ async function addTodo() {
     if (!title) return;
 
     try {
-        const { data, error } = await supabase
+        const { data, error } = await db
             .from('qta_todo_items')
             .insert([{ title, completed: false }])
             .select()
@@ -78,7 +78,7 @@ async function toggleTodo(id) {
     if (!todo) return;
 
     try {
-        const { error } = await supabase
+        const { error } = await db
             .from('qta_todo_items')
             .update({ completed: !todo.completed })
             .eq('id', id);
@@ -98,7 +98,7 @@ async function deleteTodo(id) {
     if (!confirm('Delete this todo?')) return;
 
     try {
-        const { error } = await supabase
+        const { error } = await db
             .from('qta_todo_items')
             .delete()
             .eq('id', id);
@@ -122,7 +122,7 @@ async function editTodo(id) {
     if (!newTitle || newTitle.trim() === todo.title) return;
 
     try {
-        const { error } = await supabase
+        const { error } = await db
             .from('qta_todo_items')
             .update({ title: newTitle.trim() })
             .eq('id', id);
